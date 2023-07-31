@@ -157,6 +157,7 @@ const { Settings } = require("./settings");
 const { CacheableDnsHttpAgent } = require("./cacheable-dns-http-agent");
 const apicache = require("./modules/apicache");
 const { resetChrome } = require("./monitor-types/real-browser-monitor-type");
+const { sendUserList, getUser, saveUser } = require("./user");
 
 app.use(express.json());
 
@@ -358,6 +359,7 @@ let needSetup = false;
                     callback({
                         ok: true,
                         token: jwt.sign({
+                            userID: user.id,
                             username: data.username,
                         }, server.jwtSecret),
                     });
@@ -434,7 +436,7 @@ let needSetup = false;
                 }
 
                 checkLogin(socket);
-                await doubleCheckPassword(socket, currentPassword);
+                await doubleCheckPassword(socket.userID, currentPassword);
 
                 let user = await R.findOne("user", " id = ? AND active = 1 ", [
                     socket.userID,
@@ -483,7 +485,7 @@ let needSetup = false;
                 }
 
                 checkLogin(socket);
-                await doubleCheckPassword(socket, currentPassword);
+                await doubleCheckPassword(socket.userID, currentPassword);
 
                 await R.exec("UPDATE `user` SET twofa_status = 1 WHERE id = ? ", [
                     socket.userID,
@@ -515,7 +517,7 @@ let needSetup = false;
                 }
 
                 checkLogin(socket);
-                await doubleCheckPassword(socket, currentPassword);
+                await doubleCheckPassword(socket.userID, currentPassword);
                 await TwoFA.disable2FA(socket.userID);
 
                 log.info("auth", `Disabled 2FA token. IP=${clientIP}`);
@@ -538,7 +540,7 @@ let needSetup = false;
         socket.on("verifyToken", async (token, currentPassword, callback) => {
             try {
                 checkLogin(socket);
-                await doubleCheckPassword(socket, currentPassword);
+                await doubleCheckPassword(socket.userID, currentPassword);
 
                 let user = await R.findOne("user", " id = ? AND active = 1 ", [
                     socket.userID,
@@ -604,10 +606,6 @@ let needSetup = false;
                     throw new Error("Password is too weak. It should contain alphabetic and numeric characters. It must be at least 6 characters in length.");
                 }
 
-                if ((await R.count("user")) !== 0) {
-                    throw new Error("Uptime Kuma has been initialized. If you want to run setup again, please delete the database.");
-                }
-
                 let user = R.dispense("user");
                 user.username = username;
                 user.password = passwordHash.generate(password);
@@ -631,6 +629,61 @@ let needSetup = false;
         // ***************************
         // Auth Only API
         // ***************************
+
+        socket.on("getUsers", async callback => {
+            try {
+                checkLogin(socket);
+
+                const users = await sendUserList(socket);
+
+                callback({
+                    ok: true,
+                    users
+                });
+            } catch (e) {
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
+
+        socket.on("getUser", async (userID, callback) => {
+            try {
+                checkLogin(socket);
+
+                const user = await getUser(userID);
+
+                callback({
+                    ok: true,
+                    user
+                });
+            } catch (e) {
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
+
+        socket.on("saveUser", async (user, callback) => {
+            try {
+                checkLogin(socket);
+
+                await saveUser(socket, user);
+                await sendUserList(socket);
+
+                callback({
+                    ok: true,
+                    msg: "Saved Successfully.",
+                });
+            } catch (e) {
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
 
         // Add a new monitor
         socket.on("add", async (monitor, callback) => {
@@ -1122,7 +1175,7 @@ let needSetup = false;
             }
         });
 
-        socket.on("changePassword", async (password, callback) => {
+        socket.on("changePassword", async (userID, password, callback) => {
             try {
                 checkLogin(socket);
 
@@ -1134,7 +1187,7 @@ let needSetup = false;
                     throw new Error("Password is too weak. It should contain alphabetic and numeric characters. It must be at least 6 characters in length.");
                 }
 
-                let user = await doubleCheckPassword(socket, password.currentPassword);
+                let user = await doubleCheckPassword(userID, password.currentPassword);
                 await user.resetPassword(password.newPassword);
 
                 callback({
@@ -1668,6 +1721,7 @@ async function afterLogin(socket, user) {
     sendProxyList(socket);
     sendDockerHostList(socket);
     sendAPIKeyList(socket);
+    sendUserList(socket);
 
     await sleep(500);
 
