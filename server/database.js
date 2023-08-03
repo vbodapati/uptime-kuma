@@ -77,6 +77,7 @@ class Database {
         "patch-added-kafka-producer.sql": true,
         "patch-add-certificate-expiry-status-page.sql": true,
         "patch-monitor-oauth-cc.sql": true,
+        "patch-status-page-locale-selector.sql": true,
     };
 
     /**
