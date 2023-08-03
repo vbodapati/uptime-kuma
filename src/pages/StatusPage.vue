@@ -55,8 +55,8 @@
 
                 <div class="my-3">
                     <label for="defaultLocale" class="form-label">{{ $t("Default Locale") }}</label>
-                    <select v-model="config.defaultLocale" class="form-select" id="defaultLocale">
-                        <option v-for="locale in $i18n.availableLocales" :value="locale" :text="$i18n.messages[locale].languageName"></option>
+                    <select id="defaultLocale" v-model="config.defaultLocale" class="form-select">
+                        <option v-for="locale in $i18n.availableLocales" :key="locale" :value="locale" :text="$i18n.messages[locale].languageName"></option>
                     </select>
                 </div>
 
@@ -156,7 +156,7 @@
                 <!-- Locale Selector -->
                 <span class="language-selector">
                     <select v-model="$root.language" class="form-select">
-                        <option v-for="locale in $i18n.availableLocales" :value="locale" :text="$i18n.messages[locale].languageName"></option>
+                        <option v-for="locale in $i18n.availableLocales" :key="locale" :value="locale" :text="$i18n.messages[locale].languageName"></option>
                     </select>
                 </span>
             </h1>
@@ -718,7 +718,7 @@ export default {
             this.$root.publicGroupList = res.data.publicGroupList;
 
             if (!localStorage.locale && this.config.defaultLocale) {
-                this.$root.changeCurrentPageLang(this.config.defaultLocale)
+                this.$root.changeCurrentPageLang(this.config.defaultLocale);
             }
         }).catch( function (error) {
             if (error.response.status === 404) {
