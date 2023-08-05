@@ -30,7 +30,7 @@ export default {
             localStorage.locale = lang;
             setPageLocale();
         },
-        /** 
+        /**
          * Change the language for the current page (no localstore set)
          * @param {string} lang Code of language to switch to.
          */
