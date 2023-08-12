@@ -10,7 +10,7 @@ const { log } = require("../../src/util");
 module.exports.dockerSocketHandler = (socket) => {
     socket.on("addDockerHost", async (dockerHost, dockerHostID, callback) => {
         try {
-            checkLogin(socket);
+            await checkLogin(socket);
 
             let dockerHostBean = await DockerHost.save(dockerHost, dockerHostID, socket.userID);
             await sendDockerHostList(socket);
@@ -31,7 +31,7 @@ module.exports.dockerSocketHandler = (socket) => {
 
     socket.on("deleteDockerHost", async (dockerHostID, callback) => {
         try {
-            checkLogin(socket);
+            await checkLogin(socket);
 
             await DockerHost.delete(dockerHostID, socket.userID);
             await sendDockerHostList(socket);
@@ -51,7 +51,7 @@ module.exports.dockerSocketHandler = (socket) => {
 
     socket.on("testDockerHost", async (dockerHost, callback) => {
         try {
-            checkLogin(socket);
+            await checkLogin(socket);
 
             let amount = await DockerHost.testDockerHost(dockerHost);
             let msg;

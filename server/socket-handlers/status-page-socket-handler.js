@@ -17,7 +17,7 @@ module.exports.statusPageSocketHandler = (socket) => {
     // Post or edit incident
     socket.on("postIncident", async (slug, incident, callback) => {
         try {
-            checkLogin(socket);
+            await checkLogin(socket);
 
             let statusPageID = await StatusPage.slugToID(slug);
 
@@ -70,7 +70,7 @@ module.exports.statusPageSocketHandler = (socket) => {
 
     socket.on("unpinIncident", async (slug, callback) => {
         try {
-            checkLogin(socket);
+            await checkLogin(socket);
 
             let statusPageID = await StatusPage.slugToID(slug);
 
@@ -91,7 +91,7 @@ module.exports.statusPageSocketHandler = (socket) => {
 
     socket.on("getStatusPage", async (slug, callback) => {
         try {
-            checkLogin(socket);
+            await checkLogin(socket);
 
             let statusPage = await R.findOne("status_page", " slug = ? ", [
                 slug
@@ -117,7 +117,7 @@ module.exports.statusPageSocketHandler = (socket) => {
     // imgDataUrl Only Accept PNG!
     socket.on("saveStatusPage", async (slug, config, imgDataUrl, publicGroupList, callback) => {
         try {
-            checkLogin(socket);
+            await checkLogin(socket);
 
             // Save Config
             let statusPage = await R.findOne("status_page", " slug = ? ", [
@@ -254,7 +254,7 @@ module.exports.statusPageSocketHandler = (socket) => {
     // Add a new status page
     socket.on("addStatusPage", async (title, slug, callback) => {
         try {
-            checkLogin(socket);
+            await checkLogin(socket);
 
             title = title?.trim();
             slug = slug?.trim();
@@ -300,7 +300,7 @@ module.exports.statusPageSocketHandler = (socket) => {
         const server = UptimeKumaServer.getInstance();
 
         try {
-            checkLogin(socket);
+            await checkLogin(socket);
 
             let statusPageID = await StatusPage.slugToID(slug);
 
