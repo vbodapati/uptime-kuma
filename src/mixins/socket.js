@@ -31,6 +31,7 @@ export default {
                 connectCount: 0,
                 initedSocketIO: false,
             },
+            userID: null,
             username: null,
             remember: (localStorage.remember !== "0"),
             allowLoginDialog: false,        // Allowed to show login dialog, but "loggedIn" have to be true too. This exists because prevent the login dialog show 0.1s in first before the socket server auth-ed.
@@ -371,10 +372,13 @@ export default {
                 }
 
                 if (res.ok) {
+                    const { userID, username } = this.getJWTPayload() || {};
+                    this.userID = userID;
+                    this.username = username;
+
                     this.storage().token = res.token;
                     this.socket.token = res.token;
                     this.loggedIn = true;
-                    this.username = this.getJWTPayload()?.username;
 
                     // Trigger Chrome Save Password
                     history.pushState({}, "");
