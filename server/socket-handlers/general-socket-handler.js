@@ -31,7 +31,7 @@ module.exports.generalSocketHandler = (socket, server) => {
 
     socket.on("initServerTimezone", async (timezone) => {
         try {
-            checkLogin(socket);
+            await checkLogin(socket);
             log.debug("generalSocketHandler", "Timezone: " + timezone);
             await Settings.set("initServerTimezone", true);
             await server.setTimezone(timezone);

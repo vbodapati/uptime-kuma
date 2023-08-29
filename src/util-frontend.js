@@ -139,3 +139,22 @@ export function colorOptions(self) {
             color: "#DB2777" },
     ];
 }
+
+/**
+ * Get debounced function
+ * @returns {function} debounced function
+ */
+export function Debounce() {
+    let timeout = null;
+
+    /**
+     * exec callback function after delay if no new call to function happens
+     * @param {function} callback function to execute after delay
+     * @param {number} [delay=100] delay before execute the callback if no new call to function happens
+     * @returns {void}
+     */
+    return function (callback, delay = 100) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => callback(), delay);
+    };
+}
