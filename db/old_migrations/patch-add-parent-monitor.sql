@@ -2,5 +2,6 @@
 BEGIN TRANSACTION;
 
 ALTER TABLE monitor
-    ADD timeout DOUBLE default 0 not null;
+    ADD parent INTEGER REFERENCES [monitor] ([id]) ON DELETE SET NULL ON UPDATE CASCADE;
+
 COMMIT;

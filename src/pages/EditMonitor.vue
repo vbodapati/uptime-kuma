@@ -82,7 +82,7 @@
                                         <option value="redis">
                                             Redis
                                         </option>
-                                        <option value="tailscale-ping">
+                                        <option v-if="$root.info.isContainer" value="tailscale-ping">
                                             Tailscale Ping
                                         </option>
                                     </optgroup>
@@ -97,18 +97,6 @@
                             <div class="my-3">
                                 <label for="name" class="form-label">{{ $t("Friendly Name") }}</label>
                                 <input id="name" v-model="monitor.name" type="text" class="form-control" required>
-                            </div>
-
-                            <!-- Parent Monitor -->
-                            <div class="my-3">
-                                <label for="parent" class="form-label">{{ $t("Monitor Group") }}</label>
-                                <ActionSelect
-                                    v-model="monitor.parent"
-                                    :options="parentMonitorOptionsList"
-                                    :disabled="sortedGroupMonitorList.length === 0 && draftGroupName == null"
-                                    :icon="'plus'"
-                                    :action="() => $refs.createGroupDialog.show()"
-                                />
                             </div>
 
                             <!-- URL -->
@@ -504,6 +492,18 @@
                                 </div>
                             </template>
 
+                            <!-- Parent Monitor -->
+                            <div class="my-3">
+                                <label for="parent" class="form-label">{{ $t("Monitor Group") }}</label>
+                                <ActionSelect
+                                    v-model="monitor.parent"
+                                    :options="parentMonitorOptionsList"
+                                    :disabled="sortedGroupMonitorList.length === 0 && draftGroupName == null"
+                                    :icon="'plus'"
+                                    :action="() => $refs.createGroupDialog.show()"
+                                />
+                            </div>
+
                             <!-- Description -->
                             <div class="my-3">
                                 <label for="description" class="form-label">{{ $t("Description") }}</label>
@@ -654,6 +654,7 @@
                                     <label for="httpBodyEncoding" class="form-label">{{ $t("Body Encoding") }}</label>
                                     <select id="httpBodyEncoding" v-model="monitor.httpBodyEncoding" class="form-select">
                                         <option value="json">JSON</option>
+                                        <option value="form">x-www-form-urlencoded</option>
                                         <option value="xml">XML</option>
                                     </select>
                                 </div>
@@ -1002,6 +1003,9 @@ message HealthCheckResponse {
   </soap:Body>
 </soap:Envelope>` ]);
             }
+            if (this.monitor && this.monitor.httpBodyEncoding === "form") {
+                return this.$t("Example:", [ "key1=value1&key2=value2" ]);
+            }
             return this.$t("Example:", [ `
 {
     "key": "value"
@@ -1069,8 +1073,7 @@ message HealthCheckResponse {
 
         /**
          * Generates the parent monitor options list based on the sorted group monitor list and draft group name.
-         *
-         * @return {Array} The parent monitor options list.
+         * @returns {Array} The parent monitor options list.
          */
         parentMonitorOptionsList() {
             let list = [];
@@ -1234,7 +1237,10 @@ message HealthCheckResponse {
         this.kafkaSaslMechanismOptions = kafkaSaslMechanismOptions;
     },
     methods: {
-        /** Initialize the edit monitor form */
+        /**
+         * Initialize the edit monitor form
+         * @returns {void}
+         */
         init() {
             if (this.isAdd) {
 
@@ -1447,6 +1453,7 @@ message HealthCheckResponse {
          * Added a Notification Event
          * Enable it if the notification is added in EditMonitor.vue
          * @param {number} id ID of notification to add
+         * @returns {void}
          */
         addedNotification(id) {
             this.monitor.notificationIDList[id] = true;
@@ -1456,21 +1463,26 @@ message HealthCheckResponse {
          * Added a Proxy Event
          * Enable it if the proxy is added in EditMonitor.vue
          * @param {number} id ID of proxy to add
+         * @returns {void}
          */
         addedProxy(id) {
             this.monitor.proxyId = id;
         },
 
-        // Added a Docker Host Event
-        // Enable it if the Docker Host is added in EditMonitor.vue
+        /**
+         * Added a Docker Host Event
+         * Enable it if the Docker Host is added in EditMonitor.vue
+         * @param {number} id ID of docker host
+         * @returns {void}
+         */
         addedDockerHost(id) {
             this.monitor.docker_host = id;
         },
 
         /**
          * Adds a draft group.
-         *
-         * @param {string} draftGroupName - The name of the draft group.
+         * @param {string} draftGroupName The name of the draft group.
+         * @returns {void}
          */
         addedDraftGroup(draftGroupName) {
             this.draftGroupName = draftGroupName;
