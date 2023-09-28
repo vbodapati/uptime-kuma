@@ -286,7 +286,8 @@ module.exports.statusPageSocketHandler = (socket) => {
 
             callback({
                 ok: true,
-                msg: "OK!"
+                msg: "successAdded",
+                msgi18n: true,
             });
 
         } catch (error) {
