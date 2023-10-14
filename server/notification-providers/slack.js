@@ -1,7 +1,16 @@
 const NotificationProvider = require("./notification-provider");
 const axios = require("axios");
 const { setSettings, setting } = require("../util-server");
-const { getMonitorRelativeURL, UP } = require("../../src/util");
+const { getMonitorRelativeURL, UP, flipStatus, DOWN} = require("../../src/util");
+const {R} = require("redbean-node");
+const dayjs = require("dayjs");
+
+const duration = require('dayjs/plugin/duration')
+const relativeTime = require('dayjs/plugin/relativeTime')
+
+dayjs.extend(duration)
+dayjs.extend(relativeTime)
+
 
 class Slack extends NotificationProvider {
 
@@ -26,6 +35,9 @@ class Slack extends NotificationProvider {
             console.log("Already there, no need to move the primary base URL");
         }
     }
+
+    // Keeps track of open alerts in order to update them
+    static openAlerts = {};
 
     /**
      * Builds the actions available in the slack message
@@ -98,6 +110,10 @@ class Slack extends NotificationProvider {
                 {
                     "type": "mrkdwn",
                     "text": `*Time (${heartbeatJSON["timezone"]})*\n${heartbeatJSON["localDateTime"]}`,
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": `*After*\n${duration.humanize()}`,
                 }
             ],
         });
@@ -125,6 +141,8 @@ class Slack extends NotificationProvider {
         }
 
         try {
+
+            // check if the notification provider is being tested
             if (heartbeatJSON == null) {
                 let data = {
                     "text": msg,
@@ -135,6 +153,8 @@ class Slack extends NotificationProvider {
                 await axios.post(notification.slackwebhookURL, data);
                 return okMsg;
             }
+
+            const duration = await Slack.calculateDuration(heartbeatJSON);
 
             const baseURL = await setting("primaryBaseURL");
 
@@ -147,7 +167,7 @@ class Slack extends NotificationProvider {
                 "attachments": [
                     {
                         "color": (heartbeatJSON["status"] === UP) ? "#2eb886" : "#e01e5a",
-                        "blocks": Slack.buildBlocks(baseURL, monitorJSON, heartbeatJSON, title, msg),
+                        "blocks": Slack.buildBlocks(baseURL, monitorJSON, heartbeatJSON, title, msg, duration),
                     }
                 ]
             };
@@ -156,12 +176,37 @@ class Slack extends NotificationProvider {
                 await Slack.deprecateURL(notification.slackbutton);
             }
 
-            await axios.post(notification.slackwebhookURL, data);
+            const response = await axios.post(notification.slackwebhookURL, data);
+
+            console.log({response: response.data});
+
             return okMsg;
         } catch (error) {
             this.throwGeneralAxiosError(error);
         }
 
+    }
+
+    /**
+     *
+     * @param {object} heartbeatJSON
+     * @returns {Promise<null|number>}
+     */
+    static async calculateDuration(heartbeatJSON) {
+
+        console.log(heartbeatJSON);
+        const previousDifferentBeat = await R.findOne("heartbeat", " monitor_id = ? AND status = ? ORDER BY time DESC", [
+            monitorJSON.id,
+            flipStatus(heartbeatJSON.status)
+        ]);
+
+        let durationInMs = null;
+
+        if(previousDifferentBeat){
+            durationInMs = new Date(heartbeatJSON.time) - new Date(previousDifferentBeat._time);
+        }
+
+        return durationInMs;
     }
 }
 
