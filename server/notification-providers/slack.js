@@ -1,16 +1,15 @@
 const NotificationProvider = require("./notification-provider");
 const axios = require("axios");
 const { setSettings, setting } = require("../util-server");
-const { getMonitorRelativeURL, UP, flipStatus, DOWN, log} = require("../../src/util");
-const {R} = require("redbean-node");
+const { getMonitorRelativeURL, UP, flipStatus, DOWN, log } = require("../../src/util");
+const { R } = require("redbean-node");
 const dayjs = require("dayjs");
 
-const duration = require('dayjs/plugin/duration')
-const relativeTime = require('dayjs/plugin/relativeTime')
+const duration = require("dayjs/plugin/duration");
+const relativeTime = require("dayjs/plugin/relativeTime");
 
-dayjs.extend(duration)
-dayjs.extend(relativeTime)
-
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
 
 class Slack extends NotificationProvider {
 
@@ -35,7 +34,6 @@ class Slack extends NotificationProvider {
             console.log("Already there, no need to move the primary base URL");
         }
     }
-
 
     /**
      * @inheritdoc
