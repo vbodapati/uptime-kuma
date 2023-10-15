@@ -251,63 +251,24 @@ class Slack extends NotificationProvider {
 
         let response = null;
         switch(options.mode){
-            case 'app':
-                const token = options.botToken;
-
-                const monitorId = heartbeatJSON.monitorId;
-
-                const axiosConfig = {
-                    headers: {
-                        'Authorization': 'Bearer ' +token,
-                    }
-                };
-
-                const existingAlerts = Slack.getAlerts(monitorId);
-                if(existingAlerts.length > 0 && heartbeatJSON.status === UP){
-
-                    log.info("slack", `Updating ${existingAlerts.length} message(s)`);
-
-                    //Update the messages in parallel
-                    const responses = await Promise.all(existingAlerts.map(({channel, ts}) => {
-                        message.channel = channel;
-                        message.ts = ts;
-                        return axios.post(Slack.ENDPOINTS.update, message, axiosConfig);
-                    }))
-
-                    //get the last response
-                    response = responses.pop();
-
-                }else{
-                    response = await axios.post(Slack.ENDPOINTS.postMessage, message, axiosConfig);
-                }
-
-                if(response.data.ok){
-
-                    if(heartbeatJSON.status === DOWN){
-                        Slack.trackAlert(monitorId, response.data);
-                    }else if(heartbeatJSON.status === UP){
-                        Slack.clearAlerts(monitorId);
-                    }
-
-                }
-
+            case "app":
+                response = Slack.deliverMessageViaAppApi(options, heartbeatJSON, message);
                 break;
 
-            case 'webhook':
+            case "webhook":
             default:
                 response = axios.post(options.slackwebhookURL, message);
-
 
         }
 
         return response;
     }
 
-
     /**
      * Track an open alert for a specific monitor
      * @param {string} monitorId The monitor id
      * @param {object} data The object representing the message
+     * @returns void
      */
     static trackAlert(monitorId, data) {
         Slack.openAlerts[monitorId] = Slack.openAlerts[monitorId] || [];
@@ -321,6 +282,7 @@ class Slack extends NotificationProvider {
     /**
      * Clears the open alerts for a specific monitor
      * @param {string} monitorId The monitor id
+     * @returns void
      */
     static clearAlerts(monitorId) {
         Slack.openAlerts[monitorId] = [];
@@ -329,10 +291,61 @@ class Slack extends NotificationProvider {
     /**
      * Returns the alert(s) for the ongoing incident for a specific monitor
      * @param {string} monitorId The monitor id
-     * @returns {Array<object>}
+     * @returns {Array<object>} all open alerts
      */
     static getAlerts(monitorId) {
         return Slack.openAlerts[monitorId] || [];
+    }
+
+    /**
+     * Delivers the message through the Slack App API
+     * @param {object} options Slack configuration
+     * @param {object} heartbeatJSON The heartbeat bean
+     * @param {object} message The message object to send
+     * @return {Promise<object>}
+     */
+    static async deliverMessageViaAppApi(options, heartbeatJSON, message) {
+
+        let response = null;
+        const token = options.botToken;
+        const monitorId = heartbeatJSON.monitorId;
+
+        const axiosConfig = {
+            headers: {
+                "Authorization": "Bearer " + token,
+            }
+        };
+
+        const existingAlerts = Slack.getAlerts(monitorId);
+        if (existingAlerts.length > 0 && heartbeatJSON.status === UP) {
+
+            log.info("slack", `Updating ${existingAlerts.length} message(s)`);
+
+            //Update the messages in parallel
+            const responses = await Promise.all(existingAlerts.map(( {channel, ts} ) => {
+                message.channel = channel;
+                message.ts = ts;
+                return axios.post(Slack.ENDPOINTS.update, message, axiosConfig);
+            }));
+
+            //get the last response
+            response = responses.pop();
+
+        } else {
+            response = await axios.post(Slack.ENDPOINTS.postMessage, message, axiosConfig);
+        }
+
+        if(response.data.ok) {
+
+            if (heartbeatJSON.status === DOWN){
+                Slack.trackAlert(monitorId, response.data);
+            } else if (heartbeatJSON.status === UP) {
+                Slack.clearAlerts(monitorId);
+            }
+
+        }
+
+        return response;
     }
 }
 

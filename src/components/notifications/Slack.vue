@@ -1,12 +1,10 @@
 <template>
     <div class="mb-3">
-
         <label for="slack-mode">API mode</label>
-        <select v-model="$parent.notification.mode" id="slack-mode" class="form-control">
+        <select id="slack-mode" v-model="$parent.notification.mode" class="form-control">
           <option value="webhook">Webhook</option>
           <option value="app">App</option>
         </select>
-
 
         <fieldset v-if="$parent.notification.mode == 'webhook'">
           <label for="slack-webhook-url" class="form-label">{{ $t("Webhook URL") }}<span style="color: red;"><sup>*</sup></span></label>
