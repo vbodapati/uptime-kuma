@@ -294,7 +294,7 @@ class Slack extends NotificationProvider {
      * @param {object} options Slack configuration
      * @param {object} heartbeatJSON The heartbeat bean
      * @param {object} message The message object to send
-     * @return {Promise<object>} The axios response
+     * @returns {Promise<object>} The axios response
      */
     static async deliverMessageViaAppApi(options, heartbeatJSON, message) {
 
@@ -314,7 +314,7 @@ class Slack extends NotificationProvider {
             log.info("slack", `Updating ${existingAlerts.length} message(s)`);
 
             //Update the messages in parallel
-            const responses = await Promise.all(existingAlerts.map(( {channel, ts} ) => {
+            const responses = await Promise.all(existingAlerts.map(( { channel, ts } ) => {
                 message.channel = channel;
                 message.ts = ts;
                 return axios.post(Slack.ENDPOINTS.update, message, axiosConfig);
