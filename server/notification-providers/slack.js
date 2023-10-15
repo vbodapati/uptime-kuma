@@ -297,7 +297,7 @@ class Slack extends NotificationProvider {
      * @param {object} options Slack configuration
      * @param {object} heartbeatJSON The heartbeat bean
      * @param {object} message The message object to send
-     * @return {Promise<object>}
+     * @return {Promise<object>} The axios response
      */
     static async deliverMessageViaAppApi(options, heartbeatJSON, message) {
 
