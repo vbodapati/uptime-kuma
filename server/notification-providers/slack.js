@@ -1,7 +1,7 @@
 const NotificationProvider = require("./notification-provider");
 const axios = require("axios");
 const { setSettings, setting } = require("../util-server");
-const { getMonitorRelativeURL, UP, flipStatus, DOWN} = require("../../src/util");
+const { getMonitorRelativeURL, UP, flipStatus, DOWN, log} = require("../../src/util");
 const {R} = require("redbean-node");
 const dayjs = require("dayjs");
 
@@ -51,16 +51,14 @@ class Slack extends NotificationProvider {
 
             const title = "Uptime Kuma Alert";
 
-            const message = await Slack.buildMessage(heartbeatJSON, monitorJSON, notification, msg, title);
+            const message = await Slack.buildMessage(heartbeatJSON, monitorJSON, notification, title, msg);
 
             //not sure what this does, I think it can be safely removed
             if (notification.slackbutton) {
                 await Slack.deprecateURL(notification.slackbutton);
             }
 
-            const response = await Slack.deliverMessage(notification, heartbeatJSON, message);
-
-            console.log({response: response.data});
+            await Slack.deliverMessage(notification, heartbeatJSON, message);
 
             return okMsg;
         } catch (error) {
@@ -70,13 +68,12 @@ class Slack extends NotificationProvider {
     }
 
     /**
-     *
+     * Function to calculate the duration of the downtime
      * @param {object} heartbeatJSON
      * @returns {Promise<null|number>}
      */
     static async calculateDuration(heartbeatJSON) {
 
-        console.log(heartbeatJSON);
         const previousDifferentBeat = await R.findOne("heartbeat", " monitor_id = ? AND status = ? ORDER BY time DESC", [
             heartbeatJSON.monitorID,
             flipStatus(heartbeatJSON.status)
@@ -92,7 +89,16 @@ class Slack extends NotificationProvider {
     }
 
 
-    static async buildMessage(heartbeatJSON, monitorJSON, notification, msg, title){
+    /**
+     *
+     * @param {object} heartbeatJSON The heartbeat bean
+     * @param {object} monitorJSON The monitor bean
+     * @param {object} notification The notification config
+     * @param {string} title The message title
+     * @param {string} msg The textual message
+     * @returns {Promise<object>}
+     */
+    static async buildMessage(heartbeatJSON, monitorJSON, notification, title, msg){
 
         // check if the notification provider is being tested
         if (heartbeatJSON == null) {
@@ -104,8 +110,6 @@ class Slack extends NotificationProvider {
             };
 
         }
-
-        console.log({heartbeatJSON});
 
         const duration = await Slack.calculateDuration(heartbeatJSON);
 
@@ -192,23 +196,28 @@ class Slack extends NotificationProvider {
             },
         });
 
+        const body = [
+            {
+                "type": "mrkdwn",
+                "text": "*Message*\n" + msg,
+            },
+            {
+                "type": "mrkdwn",
+                "text": `*Time (${heartbeatJSON["timezone"]})*\n${heartbeatJSON["localDateTime"]}`,
+            },
+        ];
+
+        if(duration){
+            body.push({
+                "type": "mrkdwn",
+                "text": `*After*\n${dayjs.duration(duration/1000).humanize()}`,
+            });
+        }
+
         // the body block, containing the details
         blocks.push({
             "type": "section",
-            "fields": [
-                {
-                    "type": "mrkdwn",
-                    "text": "*Message*\n" + msg,
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": `*Time (${heartbeatJSON["timezone"]})*\n${heartbeatJSON["localDateTime"]}`,
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": `*After*\n${dayjs.duration(duration/1000).humanize()}`,
-                }
-            ],
+            "fields": body,
         });
 
         if (actions.length > 0) {
@@ -230,9 +239,16 @@ class Slack extends NotificationProvider {
     }
 
 
-    // Keeps track of open alerts in order to update them
+    // Keeps track of open alerts in order to update/close them
     static openAlerts = {};
 
+    /**
+     *
+     * @param {object} options The slack configuration
+     * @param {object} heartbeatJSON The heartbeat bean
+     * @param {object} message The message object to send to Slack
+     * @returns {Promise<T|AxiosResponse<any>>}
+     */
     static async deliverMessage(options, heartbeatJSON, message) {
 
         let response = null;
@@ -250,7 +266,10 @@ class Slack extends NotificationProvider {
 
                 const existingAlerts = Slack.getAlerts(monitorId);
                 if(existingAlerts.length > 0 && heartbeatJSON.status === UP){
-                    console.log(`Updating ${existingAlerts.length} messages`);
+
+                    log.info("slack", `Updating ${existingAlerts.length} message(s)`);
+
+                    //Update the messages in parallel
                     const responses = await Promise.all(existingAlerts.map(({channel, ts}) => {
                         message.channel = channel;
                         message.ts = ts;
@@ -259,6 +278,7 @@ class Slack extends NotificationProvider {
 
                     //get the last response
                     response = responses.pop();
+
                 }else{
                     response = await axios.post(Slack.ENDPOINTS.postMessage, message, axiosConfig);
                 }
@@ -266,11 +286,10 @@ class Slack extends NotificationProvider {
                 if(response.data.ok){
 
                     if(heartbeatJSON.status === DOWN){
-                        await Slack.trackAlert(monitorId, axiosConfig, response.data.channel, response.data.ts);
+                        Slack.trackAlert(monitorId, response.data);
                     }else if(heartbeatJSON.status === UP){
                         Slack.clearAlerts(monitorId);
                     }
-
 
                 }
 
@@ -287,29 +306,33 @@ class Slack extends NotificationProvider {
     }
 
 
-    static async trackAlert(monitorId, axiosConfig, channel, ts) {
+    /**
+     * Track an open alert for a specific monitor
+     * @param {string} monitorId The monitor id
+     * @param {object} data The object representing the message
+     */
+    static trackAlert(monitorId, data) {
         Slack.openAlerts[monitorId] = Slack.openAlerts[monitorId] || [];
 
-        Slack.openAlerts[monitorId].push({
-            channel,
-            ts
-        });
+        Slack.openAlerts[monitorId].push(data);
 
-        /*
-        const getPermalinkUrl = `${Slack.ENDPOINTS.getPermalink}?channel=${encodeURIComponent(channel)}&message_ts=${encodeURIComponent(ts)}`;
+        log.debug("notification.slack", `Monitor ${monitorId} now has ${Slack.openAlerts[monitorId].length} open alerts`);
 
-        const permalinkResponse = await axios.get(getPermalinkUrl, axiosConfig)
-        if(permalinkResponse.data.ok){
-            Slack.openAlerts[monitorId].push(permalinkResponse.data.permalink);
-        }
-
-        */
     }
 
+    /**
+     * Clears the open alerts for a specific monitor
+     * @param {string} monitorId The monitor id
+     */
     static clearAlerts(monitorId) {
         Slack.openAlerts[monitorId] = [];
     }
 
+    /**
+     * Returns the alert(s) for the ongoing incident for a specific monitor
+     * @param {string} monitorId The monitor id
+     * @returns {Array<object>}
+     */
     static getAlerts(monitorId) {
         return Slack.openAlerts[monitorId] || [];
     }
