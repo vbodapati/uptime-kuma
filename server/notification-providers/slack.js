@@ -67,8 +67,8 @@ class Slack extends NotificationProvider {
 
     /**
      * Function to calculate the duration of the downtime
-     * @param {object} heartbeatJSON
-     * @returns {Promise<null|number>}
+     * @param {object} heartbeatJSON The heartbeat bean
+     * @returns {Promise<null|number>} The duration since the current state started
      */
     static async calculateDuration(heartbeatJSON) {
 
@@ -86,17 +86,16 @@ class Slack extends NotificationProvider {
         return durationInMs;
     }
 
-
     /**
-     *
+     * Builds the message object to send to Slack
      * @param {object} heartbeatJSON The heartbeat bean
      * @param {object} monitorJSON The monitor bean
      * @param {object} notification The notification config
      * @param {string} title The message title
      * @param {string} msg The textual message
-     * @returns {Promise<object>}
+     * @returns {Promise<object>} The message object
      */
-    static async buildMessage(heartbeatJSON, monitorJSON, notification, title, msg){
+    static async buildMessage(heartbeatJSON, monitorJSON, notification, title, msg) {
 
         // check if the notification provider is being tested
         if (heartbeatJSON == null) {
@@ -130,8 +129,6 @@ class Slack extends NotificationProvider {
         };
 
     }
-
-
 
     /**
      * Builds the actions available in the Slack message
@@ -170,7 +167,6 @@ class Slack extends NotificationProvider {
         return actions;
     }
 
-
     /**
      * Builds the different blocks the Slack message consists of.
      * @param {Array} actions The action objects for the message
@@ -205,10 +201,10 @@ class Slack extends NotificationProvider {
             },
         ];
 
-        if(duration){
+        if (duration) {
             body.push({
                 "type": "mrkdwn",
-                "text": `*After*\n${dayjs.duration(duration/1000).humanize()}`,
+                "text": `*After*\n${dayjs.duration(duration / 1000).humanize()}`,
             });
         }
 
@@ -229,28 +225,27 @@ class Slack extends NotificationProvider {
         return blocks;
     }
 
-
     static ENDPOINTS = {
-        postMessage: 'https://slack.com/api/chat.postMessage',
-        getPermalink: 'https://slack.com/api/chat.getPermalink',
-        update: 'https://slack.com/api/chat.update',
-    }
+        postMessage: "https://slack.com/api/chat.postMessage",
+        getPermalink: "https://slack.com/api/chat.getPermalink",
+        update: "https://slack.com/api/chat.update",
+    };
 
 
     // Keeps track of open alerts in order to update/close them
     static openAlerts = {};
 
     /**
-     *
+     * Delivers the message object to slack, through the chosen method
      * @param {object} options The slack configuration
      * @param {object} heartbeatJSON The heartbeat bean
      * @param {object} message The message object to send to Slack
-     * @returns {Promise<T|AxiosResponse<any>>}
+     * @returns {Promise<T|AxiosResponse<any>>} The response from axios
      */
     static async deliverMessage(options, heartbeatJSON, message) {
 
         let response = null;
-        switch(options.mode){
+        switch (options.mode) {
             case "app":
                 response = Slack.deliverMessageViaAppApi(options, heartbeatJSON, message);
                 break;
