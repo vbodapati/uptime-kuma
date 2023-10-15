@@ -231,7 +231,6 @@ class Slack extends NotificationProvider {
         update: "https://slack.com/api/chat.update",
     };
 
-
     // Keeps track of open alerts in order to update/close them
     static openAlerts = {};
 
@@ -263,7 +262,6 @@ class Slack extends NotificationProvider {
      * Track an open alert for a specific monitor
      * @param {string} monitorId The monitor id
      * @param {object} data The object representing the message
-     * @returns void
      */
     static trackAlert(monitorId, data) {
         Slack.openAlerts[monitorId] = Slack.openAlerts[monitorId] || [];
@@ -277,7 +275,6 @@ class Slack extends NotificationProvider {
     /**
      * Clears the open alerts for a specific monitor
      * @param {string} monitorId The monitor id
-     * @returns void
      */
     static clearAlerts(monitorId) {
         Slack.openAlerts[monitorId] = [];
@@ -330,9 +327,9 @@ class Slack extends NotificationProvider {
             response = await axios.post(Slack.ENDPOINTS.postMessage, message, axiosConfig);
         }
 
-        if(response.data.ok) {
+        if (response.data.ok) {
 
-            if (heartbeatJSON.status === DOWN){
+            if (heartbeatJSON.status === DOWN) {
                 Slack.trackAlert(monitorId, response.data);
             } else if (heartbeatJSON.status === UP) {
                 Slack.clearAlerts(monitorId);
