@@ -6,7 +6,7 @@ const { log, UP, DOWN, PENDING, MAINTENANCE, flipStatus, MAX_INTERVAL_SECOND, MI
     SQL_DATETIME_FORMAT
 } = require("../../src/util");
 const { tcping, ping, checkCertificate, checkStatusCode, getTotalClientInRoom, setting, mssqlQuery, postgresQuery, mysqlQuery, mqttAsync, setSetting, httpNtlm, radius, grpcQuery,
-    redisPingAsync, mongodbPing, kafkaProducerAsync, getOidcTokenClientCredentials,
+    redisPingAsync, mongodbPing, kafkaProducerAsync, getOidcTokenClientCredentials, checkCertificateHostname
 } = require("../util-server");
 const { R } = require("redbean-node");
 const { BeanModel } = require("redbean-node/dist/bean-model");
@@ -507,6 +507,9 @@ class Monitor extends BeanModel {
                         log.debug("monitor", `[${this.name}] Check cert`);
                         try {
                             let tlsInfoObject = checkCertificate(res);
+
+                            tlsInfoObject.hostnameMatchMonitorUrl = checkCertificateHostname(tlsInfoObject.certInfo.raw, this.getUrl()?.hostname);
+
                             tlsInfo = await this.updateTlsInfo(tlsInfoObject);
 
                             if (!this.getIgnoreTls() && this.isEnabledExpiryNotification()) {
