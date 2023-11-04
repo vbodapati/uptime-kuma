@@ -15,3 +15,14 @@ describe("user can create a new account on settings page", () => {
             .and("contain.text", "Added Successfully.");
     });
 });
+
+describe("logout and login with new user", () => {
+    before(() => {
+        cy.visit('/');
+        actor.actor.loginTask.fillAndSubmitLoginForm(userData.ADMIN_USER_DATA.username, userData.ADMIN_USER_DATA.password);
+    });
+    it("user can edit its data with new created account", () => {
+        cy.visit(`/settings/users/edit/${userData.ADMIN_USER_DATA.id}`);
+
+    });
+});
