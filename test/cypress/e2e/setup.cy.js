@@ -14,5 +14,16 @@ describe("user can create a new account on setup page", () => {
         cy.get('[role="alert"]')
             .should("be.visible")
             .and("contain.text", "Added Successfully.");
+    });   
+});
+
+describe("after first setup login form is presented", () => {
+    before(() => {
+        cy.visit("/setup");
+    });
+    it("user can login with created account", () => {
+        cy.url().should("be.equal", dashboardPage.DashboardPage.url);
+        actor.actor.loginTask.fillAndSubmitLoginForm();
+        cy.url().should("be.equal", dashboardPage.DashboardPage.url);
     });
 });
