@@ -5,32 +5,31 @@
                 <h1 class="h3 mb-3 fw-normal" />
 
                 <div v-if="!tokenRequired" class="form-floating">
-                    <input id="floatingInput" v-model="username" type="text" class="form-control" placeholder="Username">
+                    <input id="floatingInput" v-model="username" type="text" class="form-control" placeholder="Username" data-cy="login-username-input">
                     <label for="floatingInput">{{ $t("Username") }}</label>
                 </div>
 
                 <div v-if="!tokenRequired" class="form-floating mt-3">
-                    <input id="floatingPassword" v-model="password" type="password" class="form-control" placeholder="Password">
+                    <input id="floatingPassword" v-model="password" type="password" class="form-control" placeholder="Password" data-cy="login-password-input">
                     <label for="floatingPassword">{{ $t("Password") }}</label>
                 </div>
 
                 <div v-if="tokenRequired">
                     <div class="form-floating mt-3">
-                        <input id="otp" v-model="token" type="text" maxlength="6" class="form-control" placeholder="123456">
+                        <input id="otp" v-model="token" type="text" maxlength="6" class="form-control" placeholder="123456" data-cy="login-otp-input">
                         <label for="otp">{{ $t("Token") }}</label>
                     </div>
                 </div>
 
                 <div class="form-check mb-3 mt-3 d-flex justify-content-center pe-4">
                     <div class="form-check">
-                        <input id="remember" v-model="$root.remember" type="checkbox" value="remember-me" class="form-check-input">
-
+                        <input id="remember" v-model="$root.remember" type="checkbox" value="remember-me" class="form-check-input" data-cy="login-remember-check">
                         <label class="form-check-label" for="remember">
                             {{ $t("Remember me") }}
                         </label>
                     </div>
                 </div>
-                <button class="w-100 btn btn-primary" type="submit" :disabled="processing">
+                <button class="w-100 btn btn-primary" type="submit" :disabled="processing" data-cy="submit-login-form">
                     {{ $t("Login") }}
                 </button>
 
