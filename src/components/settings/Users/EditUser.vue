@@ -14,10 +14,11 @@
                     class="form-control mt-2"
                     required
                     :disabled="saving"
+                    data-cy="edit-username-input"
                 />
             </label>
 
-            <button class="btn btn-primary" type="submit" :disabled="saving">
+            <button class="btn btn-primary" type="submit" :disabled="saving" data-cy="submit-edit-username-form">
                 <span v-show="saving" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
                 {{ $t("Update Username") }}
             </button>
@@ -35,6 +36,7 @@
                         class="form-control mt-2"
                         required
                         :disabled="savingPassword"
+                        data-cy="edit-current-password-input"
                     />
                 </label>
             </div>
@@ -49,6 +51,7 @@
                         class="form-control mt-2"
                         required
                         :disabled="savingPassword"
+                        data-cy="edit-new-password-input"
                     />
                 </label>
             </div>
@@ -63,11 +66,12 @@
                         class="form-control mt-2"
                         required
                         :disabled="savingPassword"
+                        data-cy="edit-new-password-repeat-input"
                     />
                 </label>
             </div>
 
-            <button class="btn btn-primary" type="submit" :disabled="savingPassword">
+            <button class="btn btn-primary" type="submit" :disabled="savingPassword" data-cy="submit-edit-password-form">
                 <span v-show="savingPassword" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
                 {{ $t("Update Password") }}
             </button>
@@ -83,6 +87,7 @@
                     type="checkbox"
                     :disabled="saving"
                     @click="debounceCheckboxClick(() => { active = !active; save({ active }); })"
+                    data-cy="edit-active-checkbox"
                 >
                 <div class="ps-2">{{ $t("Active") }}</div>
             </label>
