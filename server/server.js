@@ -796,6 +796,8 @@ let needSetup = false;
                 bean.proxyId = Number.isInteger(monitor.proxyId) ? monitor.proxyId : null;
                 bean.mqttUsername = monitor.mqttUsername;
                 bean.mqttPassword = monitor.mqttPassword;
+                bean.nutUsername = monitor.nutUsername;
+                bean.nutPassword = monitor.nutPassword;
                 bean.mqttTopic = monitor.mqttTopic;
                 bean.mqttSuccessMessage = monitor.mqttSuccessMessage;
                 bean.databaseConnectionString = monitor.databaseConnectionString;
@@ -827,6 +829,7 @@ let needSetup = false;
                 bean.kafkaProducerAllowAutoTopicCreation =
                     monitor.kafkaProducerAllowAutoTopicCreation;
                 bean.gamedigGivenPortOnly = monitor.gamedigGivenPortOnly;
+                bean.upsName = monitor.upsName;
 
                 bean.validate();
 

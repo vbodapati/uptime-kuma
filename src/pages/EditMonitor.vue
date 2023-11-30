@@ -61,6 +61,9 @@
                                         <option value="mqtt">
                                             MQTT
                                         </option>
+                                        <option value="nut">
+                                            Network UPS Tools
+                                        </option>
                                         <option value="kafka-producer">
                                             Kafka Producer
                                         </option>
@@ -144,8 +147,26 @@
                                 </div>
                             </div>
 
-                            <!-- Json Query -->
-                            <div v-if="monitor.type === 'json-query'" class="my-3">
+                            <!-- NUT -->
+                            <!-- For NUT Type -->
+                            <template v-if="monitor.type === 'nut'">
+                                <div class="my-3">
+                                    <label for="upsName" class="form-label">UPS {{ $t("Name") }}</label>
+                                    <input id="upsName" v-model="monitor.upsName" type="text" class="form-control" required>
+                                </div>
+                                <div class="my-3">
+                                    <label for="nutUsername" class="form-label">{{ $t("Username") }}</label>
+                                    <input id="nutUsername" v-model="monitor.nutUsername" type="text" class="form-control">
+                                </div>
+
+                                <div class="my-3">
+                                    <label for="nutPassword" class="form-label">{{ $t("Password") }}</label>
+                                    <input id="nutPassword" v-model="monitor.nutPassword" type="password" class="form-control">
+                                </div>
+                            </template>
+
+                            <!-- Json Query and NUT-->
+                            <div v-if="monitor.type === 'json-query' || monitor.type === 'nut'" class="my-3">
                                 <label for="jsonPath" class="form-label">{{ $t("Json Query") }}</label>
                                 <input id="jsonPath" v-model="monitor.jsonPath" type="text" class="form-control" required>
 
@@ -221,15 +242,15 @@
                             </template>
 
                             <!-- Hostname -->
-                            <!-- TCP Port / Ping / DNS / Steam / MQTT / Radius / Tailscale Ping only -->
-                            <div v-if="monitor.type === 'port' || monitor.type === 'ping' || monitor.type === 'dns' || monitor.type === 'steam' || monitor.type === 'gamedig' ||monitor.type === 'mqtt' || monitor.type === 'radius' || monitor.type === 'tailscale-ping'" class="my-3">
+                            <!-- TCP Port / Ping / DNS / Steam / MQTT / Radius / Tailscale Ping / NUT only -->
+                            <div v-if="monitor.type === 'port' || monitor.type === 'ping' || monitor.type === 'dns' || monitor.type === 'steam' || monitor.type === 'gamedig' ||monitor.type === 'mqtt' || monitor.type === 'radius' || monitor.type === 'tailscale-ping' || monitor.type === 'nut'" class="my-3">
                                 <label for="hostname" class="form-label">{{ $t("Hostname") }}</label>
                                 <input id="hostname" v-model="monitor.hostname" type="text" class="form-control" :pattern="`${monitor.type === 'mqtt' ? mqttIpOrHostnameRegexPattern : ipOrHostnameRegexPattern}`" required>
                             </div>
 
                             <!-- Port -->
-                            <!-- For TCP Port / Steam / MQTT / Radius Type -->
-                            <div v-if="monitor.type === 'port' || monitor.type === 'steam' || monitor.type === 'gamedig' || monitor.type === 'mqtt' || monitor.type === 'radius'" class="my-3">
+                            <!-- For TCP Port / Steam / MQTT / Radius Type / NUT only -->
+                            <div v-if="monitor.type === 'port' || monitor.type === 'steam' || monitor.type === 'gamedig' || monitor.type === 'mqtt' || monitor.type === 'radius' || monitor.type === 'nut'" class="my-3">
                                 <label for="port" class="form-label">{{ $t("Port") }}</label>
                                 <input id="port" v-model="monitor.port" type="number" class="form-control" required min="0" max="65535" step="1">
                             </div>
@@ -1178,12 +1199,14 @@ message HealthCheckResponse {
                 }
             }
 
-            // Set default port for DNS if not already defined
-            if (! this.monitor.port || this.monitor.port === "53" || this.monitor.port === "1812") {
+            // Set default port for DNS, RADIUS, NUT if not already defined
+            if (! this.monitor.port || this.monitor.port === "53" || this.monitor.port === "1812" || this.monitor.port === "3493") {
                 if (this.monitor.type === "dns") {
                     this.monitor.port = "53";
                 } else if (this.monitor.type === "radius") {
                     this.monitor.port = "1812";
+                } else if (this.monitor.type === "nut") {
+                    this.monitor.port = "3493";
                 } else {
                     this.monitor.port = undefined;
                 }
