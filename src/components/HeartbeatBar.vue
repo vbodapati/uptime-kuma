@@ -1,30 +1,33 @@
 <template>
     <div ref="wrap" class="wrap" :style="wrapStyle">
         <div class="hp-bar-big" :style="barStyle">
-            <div
+            <!-- <div
                 v-for="(beat, index) in shortBeatList"
                 :key="index"
                 class="beat"
                 :class="{ 'empty': (beat === 0), 'down': (beat.status === 0), 'pending': (beat.status === 2), 'maintenance': (beat.status === 3) }"
                 :style="beatStyle"
                 :title="getBeatTitle(beat)"
-            />
+            /> -->
+            <CalendarHeatmap :style="{ fill: '#fff' }" class="heatmap" :values="values" :end-date="endDate" no-data-text="Down" tooltip-unit="counts" />
         </div>
-        <div
+        <!-- <div
             v-if="!$root.isMobile && size !== 'small' && beatList.length > 4 && $root.styleElapsedTime !== 'none'"
             class="d-flex justify-content-between align-items-center word" :style="timeStyle"
         >
             <div>{{ timeSinceFirstBeat }} ago</div>
             <div v-if="$root.styleElapsedTime === 'with-line'" class="connecting-line"></div>
             <div>{{ timeSinceLastBeat }}</div>
-        </div>
+        </div> -->
     </div>
 </template>
 
 <script>
 import dayjs from "dayjs";
+import { CalendarHeatmap } from "vue3-calendar-heatmap";
 
 export default {
+    components: { CalendarHeatmap },
     props: {
         /** Size of the heartbeat bar */
         size: {
@@ -109,6 +112,47 @@ export default {
             }
 
             return placeholders.concat(this.beatList.slice(start));
+        },
+
+        values() {
+            if (!this.shortBeatList || !this.shortBeatList.length) {
+                return [];
+            }
+
+            const valueObj = {};
+
+            this.shortBeatList.forEach(({ status, time }) => {
+                const date = dayjs(time).format("YYYY-MM-DD");
+
+                if (valueObj[date] === undefined) {
+                    valueObj[date] = 0;
+                }
+
+                let count = 0;
+
+                switch (status) {
+                    case 0:
+                        break;
+                    case 1:
+                        count = 10;
+                        break;
+                    case 2:
+                        count = 2;
+                        break;
+                    case 3:
+                        count = 5;
+                }
+
+                valueObj[date] += count;
+            });
+
+            return Object.keys(valueObj).map(date => ({ date,
+                count: valueObj[date] }));
+        },
+
+        endDate() {
+            const date = dayjs().format("YYYY-MM-DD");
+            return date;
         },
 
         wrapStyle() {
@@ -263,66 +307,17 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 @import "../assets/vars.scss";
 
-.wrap {
-    overflow: hidden;
-    width: 100%;
-    white-space: nowrap;
+.heatmap {
+    font-size: x-small;
 }
 
-.hp-bar-big {
-    .beat {
-        display: inline-block;
-        background-color: $primary;
-        border-radius: $border-radius;
-
-        &.empty {
-            background-color: aliceblue;
-        }
-
-        &.down {
-            background-color: $danger;
-        }
-
-        &.pending {
-            background-color: $warning;
-        }
-
-        &.maintenance {
-            background-color: $maintenance;
-        }
-
-        &:not(.empty):hover {
-            transition: all ease-in-out 0.15s;
-            opacity: 0.8;
-            transform: scale(var(--hover-scale));
-        }
-    }
-}
-
-.dark {
-    .hp-bar-big .beat.empty {
-        background-color: #848484;
-    }
-}
-
-.word {
-    color: #aaa;
-    font-size: 12px;
-}
-
-.connecting-line {
-    flex-grow: 1;
-    height: 1px;
-    background-color: #ededed;
-    margin-left: 10px;
-    margin-right: 10px;
-    margin-top: 2px;
-
-    .dark & {
-        background-color: #333;
-    }
+.vch__legend {
+    display: inline-flex;
+    padding: 0.25rem 0.5rem;
+    gap: 1ch;
+    align-items: center;
 }
 </style>
