@@ -9,7 +9,7 @@
                 :style="beatStyle"
                 :title="getBeatTitle(beat)"
             /> -->
-            <CalendarHeatmap :style="{ fill: '#fff' }" class="heatmap" :values="values" :end-date="endDate" no-data-text="Down" tooltip-unit="counts" />
+            <CalendarHeatmap :style="{ fill: '#fff' }" class="heat-map" :values="values" :end-date="endDate" no-data-text="Down" tooltip-unit="counts" />
         </div>
         <!-- <div
             v-if="!$root.isMobile && size !== 'small' && beatList.length > 4 && $root.styleElapsedTime !== 'none'"
@@ -310,14 +310,68 @@ export default {
 <style lang="scss">
 @import "../assets/vars.scss";
 
-.heatmap {
+.heat-map {
     font-size: x-small;
 }
 
-.vch__legend {
-    display: inline-flex;
-    padding: 0.25rem 0.5rem;
-    gap: 1ch;
-    align-items: center;
+.wrap {
+    overflow: hidden;
+    width: 100%;
+    white-space: nowrap;
 }
+
+.hp-bar-big {
+    .beat {
+        display: inline-block;
+        background-color: $primary;
+        border-radius: $border-radius;
+
+        &.empty {
+            background-color: aliceblue;
+        }
+
+        &.down {
+            background-color: $danger;
+        }
+
+        &.pending {
+            background-color: $warning;
+        }
+
+        &.maintenance {
+            background-color: $maintenance;
+        }
+
+        &:not(.empty):hover {
+            transition: all ease-in-out 0.15s;
+            opacity: 0.8;
+            transform: scale(var(--hover-scale));
+        }
+    }
+}
+
+.dark {
+    .hp-bar-big .beat.empty {
+        background-color: #848484;
+    }
+}
+
+.word {
+    color: #aaa;
+    font-size: 12px;
+}
+
+.connecting-line {
+    flex-grow: 1;
+    height: 1px;
+    background-color: #ededed;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-top: 2px;
+
+    .dark & {
+        background-color: #333;
+    }
+}
+
 </style>
