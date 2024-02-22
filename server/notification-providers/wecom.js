@@ -41,9 +41,6 @@ class WeCom extends NotificationProvider {
                 msgtype: "template_card",
                 template_card: {
                     card_type: "text_notice",
-                    source: {
-                        desc: monitorJSON["name"],
-                    },
                     main_title: {
                         title: this.statusToString(
                             heartbeatJSON["status"],
