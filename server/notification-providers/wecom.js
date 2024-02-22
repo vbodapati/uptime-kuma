@@ -36,9 +36,8 @@ class WeCom extends NotificationProvider {
      * @returns {object} Message
      */
     composeMessage(heartbeatJSON, monitorJSON, msg) {
-        let params = {};
         if (heartbeatJSON != null) {
-            params = {
+            return {
                 msgtype: "markdown",
                 markdown: {
                     content: `## [${this.statusToString(
@@ -50,15 +49,13 @@ class WeCom extends NotificationProvider {
                     }`,
                 },
             };
-        } else {
-            params = {
-                msgtype: "text",
-                text: {
-                    content: msg,
-                },
-            };
         }
-        return params;
+        return {
+            msgtype: "text",
+            text: {
+                content: msg,
+            },
+        };
     }
 
     /**
