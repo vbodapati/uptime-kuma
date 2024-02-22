@@ -3,7 +3,6 @@ const axios = require("axios");
 const { DOWN, UP } = require("../../src/util");
 
 class WeCom extends NotificationProvider {
-
     name = "WeCom";
 
     /**
@@ -13,13 +12,15 @@ class WeCom extends NotificationProvider {
         let okMsg = "Sent Successfully.";
 
         try {
-            let WeComUrl = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=" + notification.weComBotKey;
+            let WeComUrl =
+                "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=" +
+                notification.weComBotKey;
             let config = {
                 headers: {
-                    "Content-Type": "application/json"
-                }
+                    "Content-Type": "application/json",
+                },
             };
-            let body = this.composeMessage(heartbeatJSON, msg);
+            let body = this.composeMessage(heartbeatJSON, monitorJSON, msg);
             await axios.post(WeComUrl, body, config);
             return okMsg;
         } catch (error) {
@@ -30,26 +31,50 @@ class WeCom extends NotificationProvider {
     /**
      * Generate the message to send
      * @param {object} heartbeatJSON Heartbeat details (For Up/Down only)
+     * @param {object} monitorJSON Monitor details
      * @param {string} msg General message
      * @returns {object} Message
      */
-    composeMessage(heartbeatJSON, msg) {
-        let title;
-        if (msg != null && heartbeatJSON != null && heartbeatJSON["status"] === UP) {
-            title = "UptimeKuma Monitor Up";
+    composeMessage(heartbeatJSON, monitorJSON, msg) {
+        let params = {};
+        if (heartbeatJSON != null) {
+            params = {
+                msgtype: "markdown",
+                markdown: {
+                    content: `## [${this.statusToString(
+                        heartbeatJSON["status"]
+                    )}] ${monitorJSON["name"]} \n> ${
+                        heartbeatJSON["msg"]
+                    } \n> Time (${heartbeatJSON["timezone"]}): ${
+                        heartbeatJSON["localDateTime"]
+                    }`,
+                },
+            };
+        } else {
+            params = {
+                msgtype: "text",
+                text: {
+                    content: msg,
+                },
+            };
         }
-        if (msg != null && heartbeatJSON != null && heartbeatJSON["status"] === DOWN) {
-            title = "UptimeKuma Monitor Down";
+        return params;
+    }
+
+    /**
+     * Convert status constant to string
+     * @param {const} status The status constant
+     * @returns {string}
+     */
+    statusToString(status) {
+        switch (status) {
+            case DOWN:
+                return "DOWN";
+            case UP:
+                return "UP";
+            default:
+                return status;
         }
-        if (msg != null) {
-            title = "UptimeKuma Message";
-        }
-        return {
-            msgtype: "text",
-            text: {
-                content: title + msg
-            }
-        };
     }
 }
 
