@@ -38,15 +38,33 @@ class WeCom extends NotificationProvider {
     composeMessage(heartbeatJSON, monitorJSON, msg) {
         if (heartbeatJSON != null) {
             return {
-                msgtype: "markdown",
-                markdown: {
-                    content: `## [${this.statusToString(
-                        heartbeatJSON["status"]
-                    )}] ${monitorJSON["name"]} \n> ${
-                        heartbeatJSON["msg"]
-                    } \n> Time (${heartbeatJSON["timezone"]}): ${
-                        heartbeatJSON["localDateTime"]
-                    }`,
+                msgtype: "template_card",
+                template_card: {
+                    card_type: "text_notice",
+                    source: {
+                        desc: monitorJSON["name"],
+                    },
+                    main_title: {
+                        title: this.statusToString(
+                            heartbeatJSON["status"],
+                            monitorJSON["name"]
+                        ),
+                    },
+                    sub_title_text: heartbeatJSON["msg"],
+                    horizontal_content_list: [
+                        {
+                            keyname: "Timezone",
+                            value: heartbeatJSON["timezone"],
+                        },
+                        {
+                            keyname: "Time",
+                            value: heartbeatJSON["localDateTime"],
+                        },
+                    ],
+                    card_action: {
+                        type: 1,
+                        url: monitorJSON["url"],
+                    },
                 },
             };
         }
@@ -61,16 +79,17 @@ class WeCom extends NotificationProvider {
     /**
      * Convert status constant to string
      * @param {const} status The status constant
+     * @param {string} monitorName Name of monitor
      * @returns {string} Status
      */
-    statusToString(status) {
+    statusToString(status, monitorName) {
         switch (status) {
             case DOWN:
-                return "DOWN";
+                return `🔴 [${monitorName}] DOWN`;
             case UP:
-                return "UP";
+                return `✅ [${monitorName}] UP`;
             default:
-                return status;
+                return "Notification";
         }
     }
 }
