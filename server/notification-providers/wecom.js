@@ -64,7 +64,7 @@ class WeCom extends NotificationProvider {
     /**
      * Convert status constant to string
      * @param {const} status The status constant
-     * @returns {string}
+     * @returns {string} Status
      */
     statusToString(status) {
         switch (status) {
