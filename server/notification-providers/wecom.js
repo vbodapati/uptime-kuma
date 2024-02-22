@@ -60,7 +60,9 @@ class WeCom extends NotificationProvider {
                     ],
                     card_action: {
                         type: 1,
-                        url: monitorJSON["url"],
+                        url: monitorJSON["url"]
+                            ? monitorJSON["url"]
+                            : "https://",
                     },
                 },
             };
