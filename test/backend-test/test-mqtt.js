@@ -44,11 +44,11 @@ function testMqtt(mqttSuccessMessage, mqttCheckType, receivedMessage, onSuccess,
             status: PENDING,
         };
         mqttMonitorType.check(monitor, heartbeat, {})
-            .then(() => onSuccess(heartbeat), onError)
-            .finally(() => {
+            .then(() => {
                 testMqttClient.end();
                 hiveMQContainer.stop();
-            });
+            })
+            .then(() => onSuccess(heartbeat), onError);
 
         const testMqttClient = mqtt.connect(hiveMQContainer.getConnectionString());
         testMqttClient.on("connect", () => {
@@ -61,26 +61,40 @@ function testMqtt(mqttSuccessMessage, mqttCheckType, receivedMessage, onSuccess,
     });
 }
 
-test("MqttMonitorType - valid keywords", (t, done) => {
-    for (const mqttCheckType of [ null, "keyword" ]) {
-        testMqtt("KEYWORD", mqttCheckType, "-> KEYWORD <-",
-            (heartbeat) => {
-                assert.strictEqual(heartbeat.status, UP);
-                assert.strictEqual(heartbeat.msg, "Topic: test; Message: -> KEYWORD <-");
-                done();
-            },
-            e => done(e));
-    }
+test("MqttMonitorType - valid keywords (type=default)", (t, done) => {
+    testMqtt("KEYWORD", null, "-> KEYWORD <-",
+        (heartbeat) => {
+            assert.strictEqual(heartbeat.status, UP);
+            assert.strictEqual(heartbeat.msg, "Topic: test; Message: -> KEYWORD <-");
+            done();
+        },
+        e => done(e));
 });
-test("MqttMonitorType - invalid keywords", (t, done) => {
-    for (const mqttCheckType of [ null, "keyword" ]) {
-        testMqtt("NOT_PRESENT", mqttCheckType, "-> KEYWORD <-",
-            () => done(new Error("keywords without a keyword should have thrown")),
-            error => {
-                assert.strictEqual(error.message, "Message Mismatch - Topic: test; Message: -> KEYWORD <-");
-                done();
-            });
-    }
+
+test("MqttMonitorType - valid keywords (type=keyword)", (t, done) => {
+    testMqtt("KEYWORD", "keyword", "-> KEYWORD <-",
+        (heartbeat) => {
+            assert.strictEqual(heartbeat.status, UP);
+            assert.strictEqual(heartbeat.msg, "Topic: test; Message: -> KEYWORD <-");
+            done();
+        },
+        e => done(e));
+});
+test("MqttMonitorType - invalid keywords (type=default)", (t, done) => {
+    testMqtt("NOT_PRESENT", null, "-> KEYWORD <-",
+        () => done(new Error("keywords without a keyword should have thrown")),
+        error => {
+            assert.strictEqual(error.message, "Message Mismatch - Topic: test; Message: -> KEYWORD <-");
+            done();
+        });
+});
+test("MqttMonitorType - invalid keyword (type=keyword)", (t, done) => {
+    testMqtt("NOT_PRESENT", "keyword", "-> KEYWORD <-",
+        () => done(new Error("keywords without a keyword should have thrown")),
+        error => {
+            assert.strictEqual(error.message, "Message Mismatch - Topic: test; Message: -> KEYWORD <-");
+            done();
+        });
 });
 test("MqttMonitorType - valid json-query", (t, done) => {
     // works because the monitors' jsonPath is hard-coded to "firstProp"
