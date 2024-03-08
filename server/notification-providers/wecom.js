@@ -62,7 +62,7 @@ class WeCom extends NotificationProvider {
                         type: 1,
                         url: monitorJSON["url"]
                             ? monitorJSON["url"]
-                            : "https://",
+                            : "https://github.com/louislam/uptime-kuma", // both card_action and card_action.url are mandatory
                     },
                 },
             };
