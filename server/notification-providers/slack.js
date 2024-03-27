@@ -74,6 +74,10 @@ class Slack extends NotificationProvider {
                                 {
                                     "type": "mrkdwn",
                                     "text": `*Time (${heartbeatJSON["timezone"]})*\n${heartbeatJSON["localDateTime"]}`,
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*URL*\n" + monitorJSON.url,
                                 }],
                             }
                         ],
