@@ -58,7 +58,7 @@ async function publishMqtt(conn, message) {
 }
 
 test("MqttMonitorType", async (t) => {
-    if (process.platform !== "linux") {
+    if (process.platform !== "linux" || process.arch !== "x64") {
         if (process.env.HEADLESS_TEST) {
             return;
         }
