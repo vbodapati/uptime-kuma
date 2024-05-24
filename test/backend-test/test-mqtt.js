@@ -58,6 +58,13 @@ async function publishMqtt(conn, message) {
 }
 
 test("MqttMonitorType", async (t) => {
+    if (process.platform !== "linux") {
+        if (process.env.HEADLESS_TEST) {
+            return;
+        }
+        console.log("current platform may not support running docker containers. Make sure you have docker installed to run this testcase");
+    }
+
     let container = await (new HiveMQContainer()).start();
     let conn = container.getConnectionString();
     console.log("conn", conn);
