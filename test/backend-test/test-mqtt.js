@@ -67,15 +67,15 @@ test("MqttMonitorType", async (t) => {
 
     let container = await (new HiveMQContainer()).start();
     let conn = container.getConnectionString();
-    console.log("conn", conn);
     await t.test("timeouts work", async (_t) => {
         let now = new Date();
         try {
             await runMqttCheck(conn, "1", "0");
             assert.fail("timeouts are thrown");
         } catch (_e) {}
-        let elapsedTimeSeconds = (new Date()).getTime() - now.getTime();
-        assert.strictEqual(elapsedTimeSeconds > 1000, true);
+        let elapsedTimeMs = (new Date()).getTime() - now.getTime();
+        assert.strictEqual(elapsedTimeMs >= 1000, true, `${elapsedTimeMs} is not in the expected range`);
+        assert.strictEqual(elapsedTimeMs <= 3000, true, `${elapsedTimeMs} is not in the expected range`);
         assert.notEqual(UP, PENDING);
         await publishMqtt(conn, "message");
     });
