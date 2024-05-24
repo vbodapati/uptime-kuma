@@ -6,9 +6,11 @@ const { MqttMonitorType } = require("../../server/monitor-types/mqtt");
 const { UP, PENDING } = require("../../src/util");
 
 /**
- * @param connectionString
- * @param expected
- * @param mqttCheckType
+ * Runs an MQTT check with the given parameters.
+ * @param {string} connectionString - The MQTT connection string.
+ * @param {string} expected - The expected value or success message for the MQTT check.
+ * @param {string} mqttCheckType - The type of the MQTT check.
+ * @returns {object} - The heartbeat object after running the MQTT check.
  */
 async function runMqttCheck(connectionString, expected, mqttCheckType) {
     const mqttMonitorType = new MqttMonitorType();
@@ -33,8 +35,10 @@ async function runMqttCheck(connectionString, expected, mqttCheckType) {
 }
 
 /**
- * @param conn
- * @param message
+ * Publishes a message to an MQTT broker using the given connection details.
+ * @param {string} conn - The connection details for the MQTT broker.
+ * @param {string} message - The message to publish.
+ * @returns {Promise<void>} - A Promise that resolves when the message is successfully published.
  */
 async function publishMqtt(conn, message) {
     await new Promise((resolve, reject) => {
@@ -65,6 +69,8 @@ test("MqttMonitorType", async (t) => {
         } catch (_e) {}
         let elapsedTimeSeconds = (new Date()).getTime() - now.getTime();
         assert.strictEqual(elapsedTimeSeconds > 1000, true);
+        assert.notEqual(UP, PENDING);
+        await publishMqtt(conn, "message");
     });
     await container.stop();
 });
