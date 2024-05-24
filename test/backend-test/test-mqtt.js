@@ -56,7 +56,6 @@ async function publishMqtt(conn, message) {
         });
     });
 }
-
 test("MqttMonitorType", async (t) => {
     if (process.platform !== "linux" || process.arch !== "x64") {
         if (process.env.HEADLESS_TEST) {
@@ -65,19 +64,75 @@ test("MqttMonitorType", async (t) => {
         console.log("current platform may not support running docker containers. Make sure you have docker installed to run this testcase");
     }
 
-    let container = await (new HiveMQContainer()).start();
-    let conn = container.getConnectionString();
+    const container = await new HiveMQContainer().start();
+    const conn = container.getConnectionString();
     await t.test("timeouts work", async (_t) => {
-        let now = new Date();
+        const now = new Date();
         try {
             await runMqttCheck(conn, "1", "0");
-            assert.fail("timeouts are thrown");
+            assert.fail("timeouts are not thrown despite expecting a non-existing message");
         } catch (_e) {}
-        let elapsedTimeMs = (new Date()).getTime() - now.getTime();
-        assert.strictEqual(elapsedTimeMs >= 1000, true, `${elapsedTimeMs} is not in the expected range`);
-        assert.strictEqual(elapsedTimeMs <= 3000, true, `${elapsedTimeMs} is not in the expected range`);
-        assert.notEqual(UP, PENDING);
-        await publishMqtt(conn, "message");
+        const elapsedTimeMs = (new Date()).getTime() - now.getTime();
+        assert.strictEqual(elapsedTimeMs >= 1000 && elapsedTimeMs <= 3000, true, `${elapsedTimeMs} is not in the expected range`);
+    });
+    await t.test("valid keywords (type=default)", async (_t) => {
+        await publishMqtt(conn, "-> KEYWORD <-");
+        const heartbeat = await runMqttCheck(conn, "KEYWORD", null);
+        assert.strictEqual(heartbeat.status, UP);
+        assert.strictEqual(heartbeat.msg, "Topic: test; Message: -> KEYWORD <-");
+    });
+    await t.test("valid keywords (type=keyword)", async (_t) => {
+        await publishMqtt(conn, "-> KEYWORD <-");
+        const heartbeat = await runMqttCheck(conn, "KEYWORD", "keyword");
+        assert.strictEqual(heartbeat.status, UP);
+        assert.strictEqual(heartbeat.msg, "Topic: test; Message: -> KEYWORD <-");
+    });
+    await t.test("invalid keywords (type=default)", async (_t) => {
+        await publishMqtt(conn, "-> KEYWORD <-");
+        try {
+            await runMqttCheck(conn, "NOT_PRESENT", null);
+            assert.fail("keywords without a keyword should have thrown");
+        } catch (error) {
+            assert.strictEqual(error.message, "Message Mismatch - Topic: test; Message: -> KEYWORD <-");
+        }
+    });
+    await t.test("invalid keyword (type=keyword)", async (_t) => {
+        await publishMqtt(conn, "-> KEYWORD <-");
+        try {
+            await runMqttCheck(conn, "NOT_PRESENT", "keyword");
+            assert.fail("keywords without a keyword should have thrown");
+        } catch (error) {
+            assert.strictEqual(error.message, "Message Mismatch - Topic: test; Message: -> KEYWORD <-");
+        }
+    });
+    await t.test("valid json-query", async (_t) => {
+        // works because the monitors' jsonPath is hard-coded to "firstProp"
+        await publishMqtt(conn, "{\"firstProp\":\"present\"}");
+        const heartbeat = await runMqttCheck(conn, "present", "json-query");
+        assert.strictEqual(heartbeat.status, UP);
+        assert.strictEqual(heartbeat.msg, "Topic: test; Message: -> KEYWORD <-");
+        assert.strictEqual(heartbeat.status, UP);
+        assert.strictEqual(heartbeat.msg, "Message received, expected value is found");
+    });
+    await t.test("invalid (because query fails) json-query", async (_t) => {
+        // works because the monitors' jsonPath is hard-coded to "firstProp"
+        await publishMqtt(conn, "{}");
+        try {
+            const heartbeat = await runMqttCheck(conn, "[not_relevant]", "json-query");
+            assert.fail("json-query an empty message should have thrown, heartbeat=" + JSON.stringify(heartbeat));
+        } catch (error) {
+            assert.strictEqual(error.message, "Message received but value is not equal to expected value, value was: [undefined]");
+        }
+    });
+    await t.test("invalid (because successMessage fails) json-query", async (_t) => {
+        // works because the monitors' jsonPath is hard-coded to "firstProp"
+        await publishMqtt(conn, "{\"firstProp\":\"present\"}");
+        try {
+            const heartbeat = await runMqttCheck(conn, "[wrong_success_messsage]", "json-query");
+            assert.fail("json-query an expecting the wrong message should have thrown, heartbeat=" + JSON.stringify(heartbeat));
+        } catch (error) {
+            assert.strictEqual(error.message, "Message received but value is not equal to expected value, value was: [present]");
+        }
     });
     await container.stop();
 });
