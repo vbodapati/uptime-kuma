@@ -18,7 +18,7 @@ class SerwerSMS extends NotificationProvider {
                 }
             };
 
-            // Użyj telefonu jako pierwszej opcji
+            // Use phone as first option
             let data = {
                 "username": notification.serwersmsUsername,
                 "password": notification.serwersmsPassword,
