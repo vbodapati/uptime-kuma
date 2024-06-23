@@ -20,6 +20,7 @@ jobs:
     timeout-minutes: 15
 
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest, ARM64]
         node: [ 18, 20.5 ]
@@ -47,6 +48,7 @@ jobs:
     timeout-minutes: 15
     if: ${{ github.repository == 'louislam/uptime-kuma' }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ ARMv7 ]
         node: [ 18, 20 ]
