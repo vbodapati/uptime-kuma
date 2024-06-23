@@ -12,6 +12,9 @@ const { Client } = require("pg");
 const postgresConParse = require("pg-connection-string").parse;
 const mysql = require("mysql2");
 const { NtlmClient } = require("axios-ntlm");
+const { Client: esClient6 } = require("es6");
+const { Client: esClient7 } = require("es7");
+const { Client: esClient8 } = require("es8");
 const { Settings } = require("./settings");
 const grpc = require("@grpc/grpc-js");
 const protojs = require("protobufjs");
@@ -166,6 +169,61 @@ exports.pingAsync = function (hostname, ipv6 = false, size = 56) {
         }).catch((err) => {
             reject(err);
         });
+    });
+};
+
+/**
+ * Run a query against the elasticsearch
+ * @param {number} version Elasticsearch major version
+ * @param {[]string} nodes Should IPv6 be used?
+ * @param {Object} [headers = {}] Header to set for elasticsearch client
+ * @param {string} index name of the index to run query against
+ * @param {Object} query query to run
+ * @param {Object} [options = { interval = 20, ssl = true, headers = {} }] Options for elasticsearch, interval, ssl, headers
+ * @returns {Promise<string>} Time for ping in ms rounded to nearest integer
+ */
+exports.elasticSearchQueryAsync = function (version, nodes, index, query, options) {
+    return new Promise((resolve, reject) => {
+        const { interval = 20, ssl = true, headers = {} } = options;
+
+        const timeoutID = setTimeout(() => {
+            log.debug("elasticSearchQuery", "ElasticSearchQuery timeout triggered");
+            reject(new Error("Timeout"));
+        }, interval * 1000 * 0.8);
+
+        const opts = {
+            headers: headers,
+            nodes: nodes,
+            ssl: {
+                rejectUnauthorized: ssl !== false,
+            },
+        };
+
+        let client;
+        switch (version) {
+            case 6:
+                client = new esClient6(opts);
+                break;
+            case 7:
+                client = new esClient7(opts);
+                break;
+            case 8:
+                client = new esClient8(opts);
+                break;
+            default:
+                throw new Error("Elasticsearch version is not valid");
+        }
+        try {
+            client.search({
+                index: index,
+                query: query,
+            });
+            clearTimeout(timeoutID);
+            resolve("Successfully ran query");
+        } catch (e) {
+            clearTimeout(timeoutID);
+            reject(new Error("Error querying data: " + e.message));
+        }
     });
 };
 
