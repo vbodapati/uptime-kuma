@@ -161,6 +161,12 @@ class Monitor extends BeanModel {
             kafkaProducerMessage: this.kafkaProducerMessage,
             screenshot,
             remote_browser: this.remote_browser,
+            tcpRequest: this.tcpRequest,
+            tcpEnableTls: this.getTcpEnableTls(),
+            tcpStartTls: this.getTcpStartTls(),
+            tcpStartTlsPrompt: this.tcpStartTlsPrompt,
+            tcpStartTlsCommand: this.tcpStartTlsCommand,
+            tcpStartTlsResponse: this.tcpStartTlsResponse,
         };
 
         if (includeSensitiveData) {
@@ -323,6 +329,22 @@ class Monitor extends BeanModel {
      */
     getKafkaProducerAllowAutoTopicCreation() {
         return Boolean(this.kafkaProducerAllowAutoTopicCreation);
+    }
+
+    /**
+     * Parse to boolean
+     * @returns {boolean} Require TLS for TCP Port (TLS)
+     */
+    getTcpEnableTls() {
+        return Boolean(this.tcpEnableTls);
+    }
+
+    /**
+     * Parse to boolean
+     * @returns {boolean} Enable STARTTLS for TCP Port (TLS)
+     */
+    getTcpStartTls() {
+        return Boolean(this.tcpStartTls);
     }
 
     /**

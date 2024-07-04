@@ -831,6 +831,12 @@ let needSetup = false;
                     monitor.kafkaProducerAllowAutoTopicCreation;
                 bean.gamedigGivenPortOnly = monitor.gamedigGivenPortOnly;
                 bean.remote_browser = monitor.remote_browser;
+                bean.tcpRequest = monitor.tcpRequest;
+                bean.tcpEnableTls = monitor.tcpEnableTls;
+                bean.tcpStartTls = monitor.tcpStartTls;
+                bean.tcpStartTlsPrompt = monitor.tcpStartTlsPrompt;
+                bean.tcpStartTlsCommand = monitor.tcpStartTlsCommand;
+                bean.tcpStartTlsResponse = monitor.tcpStartTlsResponse;
 
                 bean.validate();
 
