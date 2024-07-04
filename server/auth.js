@@ -6,6 +6,7 @@ const { log } = require("../src/util");
 const { loginRateLimiter, apiRateLimiter } = require("./rate-limiter");
 const { Settings } = require("./settings");
 const dayjs = require("dayjs");
+const ldap = require("ldapjs");
 
 /**
  * Login to web app
@@ -17,13 +18,71 @@ exports.login = async function (username, password) {
     if (typeof username !== "string" || typeof password !== "string") {
         return null;
     }
+    if (process.env.AUTH_METHOD === "LDAP") {
+        return authWithLDAP(username, password);
+    } else {
+        let user = await R.findOne("user", " username = ? AND active = 1 ", [
+            username,
+        ]);
 
+        if (user && passwordHash.verify(password, user.password)) {
+            // Upgrade the hash to bcrypt
+            if (passwordHash.needRehash(user.password)) {
+                await R.exec("UPDATE `user` SET password = ? WHERE id = ? ", [
+                    passwordHash.generate(password),
+                    user.id,
+                ]);
+            }
+            return user;
+        }
+
+        return null;
+    }
+};
+
+/**
+ * Auth with LDAP
+ * @param {string} username Username to login with
+ * @param {string} password Password to login with
+ * @returns {Promise<(Bean|null)>} User or null if login failed
+ */
+async function authWithLDAP(username, password) {
+    let ldapAuthSuccess = false;
+    await new Promise((resolve, reject) => {
+        const client = ldap.createClient({
+            url: process.env.LDAP_ADDRESS.split(","),
+            // timeout: 30s
+            timeout: 30000,
+
+        });
+        client.on("connectError", (err) => {
+            log.error("auth", `connecting ldap server failed, because ${err}`);
+            reject(err);
+        });
+        let ldapDN = process.env.LDAP_UID + "=" + username + "," + process.env.LDAP_BASE_DN;
+        log.debug("auth", `ldap auth with DN : ${ldapDN}`);
+        client.bind(ldapDN,
+            password, (err) => {
+                if (err) {
+                    log.warn("auth", `ldap auth failed for ${username} because ${err}`);
+                    reject(err);
+                } else {
+                    log.info("auth", `${username} successfully logged in via ldap`);
+                    ldapAuthSuccess = true;
+                    resolve(ldapAuthSuccess);
+                }
+            });
+    }).catch(err => {
+        return null;
+    });
+    log.info("auth", `debug 1 ${ldapAuthSuccess}`);
+    if (!ldapAuthSuccess) {
+        return null;
+    }
     let user = await R.findOne("user", " username = ? AND active = 1 ", [
         username,
     ]);
-
-    if (user && passwordHash.verify(password, user.password)) {
-        // Upgrade the hash to bcrypt
+    if (user) {
         if (passwordHash.needRehash(user.password)) {
             await R.exec("UPDATE `user` SET password = ? WHERE id = ? ", [
                 passwordHash.generate(password),
@@ -31,10 +90,15 @@ exports.login = async function (username, password) {
             ]);
         }
         return user;
+    } else {
+        log.info("auth", "user: " + username + "not exists in db, create it");
+        let user = R.dispense("user");
+        user.username = username;
+        user.password = passwordHash.generate(password);
+        await R.store(user);
+        return await R.findOne("user", " username = ? AND active = 1 ", [ username ]);
     }
-
-    return null;
-};
+}
 
 /**
  * Validate a provided API key
