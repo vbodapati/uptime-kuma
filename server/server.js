@@ -1425,7 +1425,7 @@ let needSetup = false;
                 });
 
             } catch (e) {
-                console.error(e);
+                log.error("server", e);
 
                 callback({
                     ok: false,
