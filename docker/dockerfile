@@ -88,7 +88,7 @@ CMD ["npm", "run", "start-pr-test"]
 ############################################
 # Upload the artifact to Github
 ############################################
-FROM louislam/uptime-kuma:base2 AS upload-artifact
+FROM vbodapati/uptime-kuma:base2 AS upload-artifact
 WORKDIR /
 RUN apt update && \
     apt --yes install curl file
@@ -106,7 +106,7 @@ RUN chmod +x /app/extra/upload-github-release-asset.sh
 
 # Full Build
 # RUN tar -zcvf $FILE app
-# RUN /app/extra/upload-github-release-asset.sh github_api_token=$GITHUB_TOKEN owner=louislam repo=uptime-kuma tag=$VERSION filename=$FILE
+# RUN /app/extra/upload-github-release-asset.sh github_api_token=$GITHUB_TOKEN owner=vbodapati repo=uptime-kuma tag=$VERSION filename=$FILE
 
 # Dist only
 RUN cd /app && tar -zcvf $DIST dist
